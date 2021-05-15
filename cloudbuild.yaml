@@ -16,19 +16,21 @@ steps:
   # Docker Build
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 
-           'us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/myimage', 
+           'us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/helloworld-empathy', 
            '.']
 
   # Docker Push
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/myimage']
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/helloworld-empathy']
 
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'helloworld', 
-           '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/myimage',
+    args: ['run', 'deploy', 'helloworld-empathy', 
+           '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/helloworld-empathy',
            '--region', 'us-central1', '--platform', 'managed']
 
   # TODO: Get Cloud Run URL
 
-  # TODO: Make an authenticated request to the Cloud Run URL and verify response is as expected
+  # TODO: Get identity token
+
+  # TODO: Make authorized request and confirm response is as expected
