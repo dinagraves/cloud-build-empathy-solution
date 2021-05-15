@@ -29,8 +29,40 @@ steps:
            '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/helloworld-empathy',
            '--region', 'us-central1', '--platform', 'managed']
 
-  # TODO: Get Cloud Run URL
+  # Get Cloud Run URL
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: '/bin/bash'
+    args:
+    - '-c'
+    - |
+      cloud_run_url=$(gcloud run services describe helloworld-empathy \
+        --format 'value(status.url)' --platform managed --region us-central1)
+      echo $cloud_run_url > _service_url
 
-  # TODO: Get identity token
+  # Get identity token
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: '/bin/bash'
+    args:
+      - '-c'
+      - |
+        get_id_token() {
+          curl -X POST -H "content-type: application/json" \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+          -d "{\"audience\": \"$(cat _service_url)\"}" \
+           "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${_SERVICE_ACCOUNT}:generateIdToken" | \
+           python3 -c "import sys, json; print(json.load(sys.stdin)['token'])"
+        }
+        echo $(get_id_token) > _id_token
 
-  # TODO: Make authorized request and confirm response is as expected
+  # Make an authenticated request to the Cloud Run URL and verify response is as expected
+  - name: 'gcr.io/cloud-builders/curl'
+    entrypoint: '/bin/bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        msg=$(curl -si --show-error -H "Authorization: Bearer $(cat _id_token)"  $(cat _service_url))
+        if grep -q "Hello World" <<< "$msg"; then
+        echo "Test: PASSED"
+        else echo $msg && exit 1
+        fi
